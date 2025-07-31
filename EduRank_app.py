@@ -44,16 +44,9 @@ stocks = df.iloc[:, 0]
 criteria = df.columns[1:]
 data = df.iloc[:, 1:].astype(float)
 
-# Input weights for each criterion
-st.subheader("Input Weights (must sum to 1)")
-weights = []
-for i, col in enumerate(criteria):
-    weight = st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0, value=1/len(criteria), step=0.01)
-    weights.append(weight)
-
-# Ensure weights sum to 1
-if sum(weights) != 1:
-    st.warning("Weights must sum to 1! Please adjust the weights.")
+# Define Benefit and Cost Criteria (manual inputs for this example)
+benefit_criteria = ['EPS', 'DPS', 'NTA', 'DY', 'ROE']  # Update based on your dataset
+cost_criteria = ['PE', 'PTBV']  # Update based on your dataset
 
 # Normalize the data using vector normalization
 st.subheader("Step 1: Normalize the Data")
@@ -63,45 +56,37 @@ for i, col in enumerate(criteria):
     normalized[col] = norm
 st.dataframe(normalized)
 
-# Sort the normalized values based on their criteria (cost or benefit)
-st.subheader("Step 2: Sort Normalized Values by Criteria (Cost or Benefit)")
-sorted_data = normalized.copy()
-benefit_criteria = []  # Assuming you have benefit criteria manually defined here
-cost_criteria = []  # Assuming you have cost criteria manually defined here
+# Step 2: Sorting Normalized Values based on Benefit and Cost Criteria
+st.subheader("Step 2: Sort Normalized Values by Criteria (Benefit or Cost)")
+benefit_data = normalized[benefit_criteria]
+cost_data = normalized[cost_criteria]
 
-# Displaying the sorted normalized matrix (based on whether it's benefit or cost)
-# Sort by Benefit Criteria first
-for col in criteria:
-    if col in benefit_criteria:
-        sorted_data = sorted_data.sort_values(by=col, ascending=False)
-    elif col in cost_criteria:
-        sorted_data = sorted_data.sort_values(by=col, ascending=True)
+# Display the normalized values separated by Benefit and Cost Criteria
+st.write("Benefit Criteria")
+st.dataframe(benefit_data)
 
-st.dataframe(sorted_data)
+st.write("Cost Criteria")
+st.dataframe(cost_data)
 
 # Step 3: Calculate Benefit Minus Cost (For PIS and NIS Calculation)
 st.subheader("Step 3: Calculate Benefit Minus Cost")
 
-# Assuming benefit criteria are to be subtracted by cost criteria
-benefit_columns = [col for col in criteria if col in benefit_criteria]
-cost_columns = [col for col in criteria if col in cost_criteria]
-
 # Calculate total benefit minus total cost for each alternative
-benefit_minus_cost = sorted_data[benefit_columns].sum(axis=1) - sorted_data[cost_columns].sum(axis=1)
+benefit_minus_cost = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
 
 # Add the result to the data
-sorted_data['Benefit - Cost'] = benefit_minus_cost
-st.dataframe(sorted_data)
+normalized['Benefit - Cost'] = benefit_minus_cost
+st.dataframe(normalized)
 
 # Step 4: Rank the Alternatives Based on the Calculated Scores
 st.subheader("Step 4: Final Rankings")
-sorted_data['Rank'] = sorted_data['Benefit - Cost'].rank(ascending=False)
-st.dataframe(sorted_data)
+normalized['Rank'] = normalized['Benefit - Cost'].rank(ascending=False)
+st.dataframe(normalized)
 
 # Download Results as CSV
 st.subheader("Download Result")
 def convert_df(df):
     return df.to_csv(index=False).encode('utf-8')
 
-csv = convert_df(sorted_data)
+csv = convert_df(normalized)
 st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")

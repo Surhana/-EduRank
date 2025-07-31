@@ -122,4 +122,4 @@ def convert_df(df):
     return df.to_csv(index=False).encode('utf-8')
 
 csv = convert_df(ranking)
-st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")
+st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv"

@@ -77,7 +77,7 @@ st.subheader("Step 3: MOORA Performance Index (PIS)")
 positive_ideal_solution = weighted.max()
 negative_ideal_solution = weighted.min()
 
-# Display PIS and NIS values as tables
+# Display PIS and NIS values
 st.write("Positive Ideal Solution (PIS):")
 st.dataframe(pd.DataFrame(positive_ideal_solution).T)
 st.write("Negative Ideal Solution (NIS):")
@@ -87,7 +87,7 @@ st.dataframe(pd.DataFrame(negative_ideal_solution).T)
 distance_pis = np.sqrt(((weighted - positive_ideal_solution)**2).sum(axis=1))
 distance_nis = np.sqrt(((weighted - negative_ideal_solution)**2).sum(axis=1))
 
-# Display Euclidean Distance from PIS and NIS as tables
+# Display the distances
 st.write("Euclidean Distance from PIS:")
 st.dataframe(pd.DataFrame(distance_pis, columns=["Distance from PIS"]))
 st.write("Euclidean Distance from NIS:")
@@ -96,7 +96,7 @@ st.dataframe(pd.DataFrame(distance_nis, columns=["Distance from NIS"]))
 # Calculate the relative closeness
 relative_closeness = distance_nis / (distance_pis + distance_nis)
 
-# Display relative closeness as a table
+# Display relative closeness
 st.write("Relative Closeness Scores:")
 st.dataframe(pd.DataFrame(relative_closeness, columns=["Relative Closeness"]))
 

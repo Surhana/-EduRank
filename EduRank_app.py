@@ -40,8 +40,8 @@ st.subheader("Stock Data")
 st.dataframe(df)
 
 # Extract stock names and criteria
-stocks = df.iloc[:, 0]  # This is the stock names column
-criteria = df.columns[1:]  # All columns except the first (which is stock names)
+stocks = df.iloc[:, 0]  # Stock names
+criteria = df.columns[1:]  # All columns except the first (stock names)
 data = df.iloc[:, 1:].astype(float)  # Data excluding stock names
 
 # Define Benefit and Cost Criteria (manual inputs for this example)
@@ -67,7 +67,7 @@ for i, col in enumerate(criteria):
 st.dataframe(normalized)
 
 # Step 2: Sorting Normalized Values based on Benefit and Cost Criteria
-st.subheader("Step 2: Sort Normalized Values by Criteria (Benefit or Cost)")
+st.subheader("Step 2: Separate Tables for Benefit and Cost Criteria")
 
 # Sort and display Benefit Criteria
 benefit_data = normalized[benefit_criteria]

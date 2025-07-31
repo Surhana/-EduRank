@@ -58,6 +58,10 @@ missing_benefit = [col for col in benefit_criteria if col not in criteria]
 if missing_benefit:
     st.error(f"Missing benefit criteria columns: {', '.join(missing_benefit)}")
 
+# Display all available columns
+st.write("Available Columns in the Dataset:")
+st.write(criteria)
+
 # Normalize the data using vector normalization
 st.subheader("Step 1: Normalize the Data")
 normalized = data.copy()
@@ -79,6 +83,8 @@ if existing_cost_criteria:
     cost_data = normalized[existing_cost_criteria]
     st.write("Cost Criteria")
     st.dataframe(cost_data)
+else:
+    st.warning("Cost criteria columns (PE, PTBV) are missing in the dataset!")
 
 # Step 3: Calculate Benefit Minus Cost (For PIS and NIS Calculation)
 st.subheader("Step 3: Calculate Benefit Minus Cost")

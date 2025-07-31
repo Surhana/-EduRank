@@ -63,63 +63,45 @@ for i, col in enumerate(criteria):
     normalized[col] = norm
 st.dataframe(normalized)
 
-# Weighted Normalized Matrix
-st.subheader("Step 2: Weighted Normalized Matrix")
-weighted = normalized.copy()
-for i, col in enumerate(criteria):
-    weighted[col] = weighted[col] * weights[i]
-st.dataframe(weighted)
+# Sort the normalized values based on their criteria (cost or benefit)
+st.subheader("Step 2: Sort Normalized Values by Criteria (Cost or Benefit)")
+sorted_data = normalized.copy()
+benefit_criteria = []  # Assuming you have benefit criteria manually defined here
+cost_criteria = []  # Assuming you have cost criteria manually defined here
 
-# Calculate MOORA Performance Index (PIS)
-st.subheader("Step 3: MOORA Performance Index (PIS)")
+# Displaying the sorted normalized matrix (based on whether it's benefit or cost)
+# Sort by Benefit Criteria first
+for col in criteria:
+    if col in benefit_criteria:
+        sorted_data = sorted_data.sort_values(by=col, ascending=False)
+    elif col in cost_criteria:
+        sorted_data = sorted_data.sort_values(by=col, ascending=True)
 
-# Positive Ideal Solution (PIS) and Negative Ideal Solution (NIS)
-positive_ideal_solution = weighted.max()
-negative_ideal_solution = weighted.min()
+st.dataframe(sorted_data)
 
-# Display PIS and NIS values
-st.write("Positive Ideal Solution (PIS):")
-st.dataframe(pd.DataFrame(positive_ideal_solution).T)
-st.write("Negative Ideal Solution (NIS):")
-st.dataframe(pd.DataFrame(negative_ideal_solution).T)
+# Step 3: Calculate Benefit Minus Cost (For PIS and NIS Calculation)
+st.subheader("Step 3: Calculate Benefit Minus Cost")
 
-# Euclidean Distance from PIS and NIS
-distance_pis = np.sqrt(((weighted - positive_ideal_solution)**2).sum(axis=1))
-distance_nis = np.sqrt(((weighted - negative_ideal_solution)**2).sum(axis=1))
+# Assuming benefit criteria are to be subtracted by cost criteria
+benefit_columns = [col for col in criteria if col in benefit_criteria]
+cost_columns = [col for col in criteria if col in cost_criteria]
 
-# Display the distances
-st.write("Euclidean Distance from PIS:")
-st.dataframe(pd.DataFrame(distance_pis, columns=["Distance from PIS"]))
-st.write("Euclidean Distance from NIS:")
-st.dataframe(pd.DataFrame(distance_nis, columns=["Distance from NIS"]))
+# Calculate total benefit minus total cost for each alternative
+benefit_minus_cost = sorted_data[benefit_columns].sum(axis=1) - sorted_data[cost_columns].sum(axis=1)
 
-# Calculate the relative closeness
-relative_closeness = distance_nis / (distance_pis + distance_nis)
+# Add the result to the data
+sorted_data['Benefit - Cost'] = benefit_minus_cost
+st.dataframe(sorted_data)
 
-# Display relative closeness
-st.write("Relative Closeness Scores:")
-st.dataframe(pd.DataFrame(relative_closeness, columns=["Relative Closeness"]))
-
-# Calculate the final rankings based on the relative closeness
+# Step 4: Rank the Alternatives Based on the Calculated Scores
 st.subheader("Step 4: Final Rankings")
-ranking = pd.DataFrame({
-    'Stock': stocks,
-    'Distance from PIS': distance_pis,
-    'Distance from NIS': distance_nis,
-    'Relative Closeness': relative_closeness
-})
-ranking = ranking.sort_values(by="Relative Closeness", ascending=False).reset_index(drop=True)
-
-# Highlight the top-ranked stock
-def highlight_top(row):
-    return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
-
-st.dataframe(ranking.style.apply(highlight_top, axis=1))
+sorted_data['Rank'] = sorted_data['Benefit - Cost'].rank(ascending=False)
+st.dataframe(sorted_data)
 
 # Download Results as CSV
 st.subheader("Download Result")
 def convert_df(df):
     return df.to_csv(index=False).encode('utf-8')
 
-csv = convert_df(ranking)
+csv = convert_df(sorted_data)
 st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")

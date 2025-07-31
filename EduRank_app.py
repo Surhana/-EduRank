@@ -40,9 +40,9 @@ st.subheader("Stock Data")
 st.dataframe(df)
 
 # Extract stock names and criteria
-stocks = df.iloc[:, 0]  # This is the stock names column
-criteria = df.columns[1:]  # All columns except the first (which is stock names)
-data = df.iloc[:, 1:].astype(float)  # Data excluding stock names
+stocks = df.iloc[:, 0]  # Stock names
+criteria = df.columns[1:]  # Criteria excluding the first column
+data = df.iloc[:, 1:].astype(float)  # The numerical data (excluding the stock names)
 
 # Define Benefit and Cost Criteria (manual inputs for this example)
 benefit_criteria = ['EPS', 'DPS', 'NTA', 'DY', 'ROE']  # Update based on your dataset
@@ -62,8 +62,9 @@ if missing_benefit:
 st.subheader("Step 1: Normalize the Data")
 normalized = data.copy()
 for i, col in enumerate(criteria):
-    norm = data[col] / np.sqrt((data[col]**2).sum())
+    norm = data[col] / np.sqrt((data[col]**2).sum())  # Vector normalization
     normalized[col] = norm
+normalized['Stock'] = stocks  # Keep the 'Stock' column in the normalized data
 st.dataframe(normalized)
 
 # Step 2: Sorting Normalized Values based on Benefit and Cost Criteria
@@ -90,15 +91,13 @@ else:
     # If no cost criteria, just use benefit sum
     benefit_minus_cost = benefit_data.sum(axis=1)
 
-# Add the result to the data and preserve the stock names
+# Add the result to the data
 normalized['Benefit - Cost'] = benefit_minus_cost
-normalized['Stock'] = stocks  # Make sure stock names are included
 st.dataframe(normalized)
 
 # Step 4: Rank the Alternatives Based on the Calculated Scores
 st.subheader("Step 4: Final Rankings")
 normalized['Rank'] = normalized['Benefit - Cost'].rank(ascending=False)
-normalized = normalized[['Stock', 'Benefit - Cost', 'Rank']]  # Ensure stock names and rank are shown
 st.dataframe(normalized)
 
 # Download Results as CSV

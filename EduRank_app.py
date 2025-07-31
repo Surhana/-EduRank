@@ -48,14 +48,15 @@ data = df.iloc[:, 1:].astype(float)
 benefit_criteria = ['EPS', 'DPS', 'NTA', 'DY', 'ROE']  # Update based on your dataset
 cost_criteria = ['PE', 'PTBV']  # Update based on your dataset
 
+# Check if cost criteria exist in the data
+existing_cost_criteria = [col for col in cost_criteria if col in criteria]
+missing_cost_criteria = [col for col in cost_criteria if col not in criteria]
+
 # Ensure the columns in the criteria lists are present in the data
 missing_benefit = [col for col in benefit_criteria if col not in criteria]
-missing_cost = [col for col in cost_criteria if col not in criteria]
 
 if missing_benefit:
     st.error(f"Missing benefit criteria columns: {', '.join(missing_benefit)}")
-if missing_cost:
-    st.error(f"Missing cost criteria columns: {', '.join(missing_cost)}")
 
 # Normalize the data using vector normalization
 st.subheader("Step 1: Normalize the Data")
@@ -67,37 +68,41 @@ st.dataframe(normalized)
 
 # Step 2: Sorting Normalized Values based on Benefit and Cost Criteria
 st.subheader("Step 2: Sort Normalized Values by Criteria (Benefit or Cost)")
-if not missing_benefit and not missing_cost:
-    # Sorting Benefit and Cost Data Separately
-    benefit_data = normalized[benefit_criteria]
-    cost_data = normalized[cost_criteria]
 
-    # Display the normalized values separated by Benefit and Cost Criteria
-    st.write("Benefit Criteria")
-    st.dataframe(benefit_data)
+# Sort and display Benefit Criteria
+benefit_data = normalized[benefit_criteria]
+st.write("Benefit Criteria")
+st.dataframe(benefit_data)
 
+# Sort and display Cost Criteria (only if cost criteria are present)
+if existing_cost_criteria:
+    cost_data = normalized[existing_cost_criteria]
     st.write("Cost Criteria")
     st.dataframe(cost_data)
 
-    # Step 3: Calculate Benefit Minus Cost (For PIS and NIS Calculation)
-    st.subheader("Step 3: Calculate Benefit Minus Cost")
+# Step 3: Calculate Benefit Minus Cost (For PIS and NIS Calculation)
+st.subheader("Step 3: Calculate Benefit Minus Cost")
 
-    # Calculate total benefit minus total cost for each alternative
+# If there are cost criteria, subtract them from the benefit criteria
+if existing_cost_criteria:
     benefit_minus_cost = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
+else:
+    # If no cost criteria, just use benefit sum
+    benefit_minus_cost = benefit_data.sum(axis=1)
 
-    # Add the result to the data
-    normalized['Benefit - Cost'] = benefit_minus_cost
-    st.dataframe(normalized)
+# Add the result to the data
+normalized['Benefit - Cost'] = benefit_minus_cost
+st.dataframe(normalized)
 
-    # Step 4: Rank the Alternatives Based on the Calculated Scores
-    st.subheader("Step 4: Final Rankings")
-    normalized['Rank'] = normalized['Benefit - Cost'].rank(ascending=False)
-    st.dataframe(normalized)
+# Step 4: Rank the Alternatives Based on the Calculated Scores
+st.subheader("Step 4: Final Rankings")
+normalized['Rank'] = normalized['Benefit - Cost'].rank(ascending=False)
+st.dataframe(normalized)
 
-    # Download Results as CSV
-    st.subheader("Download Result")
-    def convert_df(df):
-        return df.to_csv(index=False).encode('utf-8')
+# Download Results as CSV
+st.subheader("Download Result")
+def convert_df(df):
+    return df.to_csv(index=False).encode('utf-8')
 
-    csv = convert_df(normalized)
-    st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")
+csv = convert_df(normalized)
+st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")

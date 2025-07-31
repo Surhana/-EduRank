@@ -66,4 +66,60 @@ st.dataframe(normalized)
 # Weighted Normalized Matrix
 st.subheader("Step 2: Weighted Normalized Matrix")
 weighted = normalized.copy()
-for i, col in enumerate(
+for i, col in enumerate(criteria):
+    weighted[col] = weighted[col] * weights[i]
+st.dataframe(weighted)
+
+# Calculate MOORA Performance Index (PIS)
+st.subheader("Step 3: MOORA Performance Index (PIS)")
+
+# Positive Ideal Solution (PIS) and Negative Ideal Solution (NIS)
+positive_ideal_solution = weighted.max()
+negative_ideal_solution = weighted.min()
+
+# Display PIS and NIS values as tables
+st.write("Positive Ideal Solution (PIS):")
+st.dataframe(pd.DataFrame(positive_ideal_solution).T)
+st.write("Negative Ideal Solution (NIS):")
+st.dataframe(pd.DataFrame(negative_ideal_solution).T)
+
+# Euclidean Distance from PIS and NIS
+distance_pis = np.sqrt(((weighted - positive_ideal_solution)**2).sum(axis=1))
+distance_nis = np.sqrt(((weighted - negative_ideal_solution)**2).sum(axis=1))
+
+# Display Euclidean Distance from PIS and NIS as tables
+st.write("Euclidean Distance from PIS:")
+st.dataframe(pd.DataFrame(distance_pis, columns=["Distance from PIS"]))
+st.write("Euclidean Distance from NIS:")
+st.dataframe(pd.DataFrame(distance_nis, columns=["Distance from NIS"]))
+
+# Calculate the relative closeness
+relative_closeness = distance_nis / (distance_pis + distance_nis)
+
+# Display relative closeness as a table
+st.write("Relative Closeness Scores:")
+st.dataframe(pd.DataFrame(relative_closeness, columns=["Relative Closeness"]))
+
+# Calculate the final rankings based on the relative closeness
+st.subheader("Step 4: Final Rankings")
+ranking = pd.DataFrame({
+    'Stock': stocks,
+    'Distance from PIS': distance_pis,
+    'Distance from NIS': distance_nis,
+    'Relative Closeness': relative_closeness
+})
+ranking = ranking.sort_values(by="Relative Closeness", ascending=False).reset_index(drop=True)
+
+# Highlight the top-ranked stock
+def highlight_top(row):
+    return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
+
+st.dataframe(ranking.style.apply(highlight_top, axis=1))
+
+# Download Results as CSV
+st.subheader("Download Result")
+def convert_df(df):
+    return df.to_csv(index=False).encode('utf-8')
+
+csv = convert_df(ranking)
+st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")

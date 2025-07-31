@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -5,7 +6,7 @@ from io import BytesIO
 
 # Title and description
 st.title("EduRank: MOORA-Based Stock Selection for Educational Innovation")
-st.markdown("""
+st.markdown(""" 
 This app evaluates and ranks stocks based on multiple criteria using the **MOORA (Multi-Objective Optimization on the Basis of Ratio Analysis)** method. 
 Upload your stock dataset, specify weights for each criterion, and the system will compute rankings based on the MOORA method.
 """) 

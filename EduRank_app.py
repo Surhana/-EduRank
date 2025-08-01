@@ -35,7 +35,7 @@ if uploaded_file:
     else:
         df = pd.read_excel(uploaded_file)
 else:
-    st.info("No file uploaded. Using example dataset.")
+    st.info("No file uploaded.")
     df = load_example()
 
 st.subheader("Uploaded/Example Data")

@@ -76,7 +76,7 @@ else:
     st.dataframe(weighted_df)
 
     # ---------------- STEP 3: Calculate Performance Score ----------------
-    st.subheader("Step 3: Calculate Performance Score (Benefit − Cost)")
+    st.subheader("Step 3: Calculate Performance Score")
 
     # Compute MOORA (Performance Score)
     benefit_data = weighted_matrix[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))
@@ -109,7 +109,7 @@ else:
     st.success(f"🏆 **The Best Alternative is:** {best_alt} 🎉💹")
 
     # ---------------- STEP 5: Vertical Bar Chart ----------------
-    st.subheader("Step 5: Visualize Performance Scores")
+    st.subheader("Ranking the Chart")
     fig, ax = plt.subplots(figsize=(8,4))
     ax.bar(ranking['Alternative'], ranking['Performance Score'].astype(float), color='skyblue')
     ax.set_xlabel("Alternatives")

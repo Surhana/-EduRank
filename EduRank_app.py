@@ -1,127 +1,33 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+    # ---------------- STEP 3: MOORA Score (Benefit - Cost) ----------------
+    st.subheader("Step 3: Calculate MOORA Score (Benefit − Cost)")
 
-st.title("EduRank: MOORA-Based Stock Selection for Educational Innovation")
+    # Ask user to classify criteria
+    benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria.tolist())
+    cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria if c not in benefit_criteria])
 
-st.markdown("""
-This app evaluates and ranks stocks based on multiple criteria using the **MOORA** method.
-Steps:
-1. Normalize the decision matrix
-2. Apply weights to create the weighted normalized matrix
-3. Calculate **Benefit − Cost** scores (MOORA)
-4. Rank the alternatives
-5. Visualize with a bar chart
-""")
+    # Compute MOORA scores
+    benefit_data = weighted_matrix[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))
+    cost_data = weighted_matrix[cost_criteria] if cost_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))
 
-# File uploader
-uploaded_file = st.file_uploader("Upload Excel or CSV file with stock data", type=["csv", "xlsx"])
+    moora_score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
 
-# Example dataset
-def load_example():
-    data = {
-        'Stock': ['KPJ','IHH','DPHARMA'],
-        'Earnings per Share': [0.29,0.80,0.17],
-        'Dividend per Share': [0.23,0.55,0.16],
-        'Net Tangible Asset': [0.11,0.70,0.15],
-        'Dividend Yield': [0.15,0.15,0.25],
-        'Return on Equity': [0.65,0.41,0.41],
-        'P/E Ratio': [0.41,0.25,0.21],
-        'PTBV': [0.81,0.31,0.26]
-    }
-    return pd.DataFrame(data)
+    moora_df = pd.DataFrame({
+        "Alternative": alternatives,
+        "MOORA Score (Benefit-Cost)": moora_score.round(4)
+    })
+    st.dataframe(moora_df)
 
-# Load data
-if uploaded_file:
-    if uploaded_file.name.endswith("csv"):
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_excel(uploaded_file)
-else:
-    st.info("No file uploaded. Using example dataset.")
-    df = load_example()
+    # ---------------- STEP 4: Final Rankings ----------------
+    st.subheader("Step 4: Final Rankings")
+    ranking = moora_df.sort_values('MOORA Score (Benefit-Cost)', ascending=False).reset_index(drop=True)
+    ranking['Rank'] = range(1, len(ranking) + 1)
 
-st.subheader("Uploaded/Example Data")
-st.dataframe(df)
+    # Highlight the top-ranked alternative in green
+    def highlight_top(row):
+        return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
 
-# Extract stock names and numeric criteria
-stocks = df.iloc[:,0]
-criteria_cols = df.columns[1:]
-numeric_df = df[criteria_cols].astype(float)
+    st.dataframe(ranking.style.apply(highlight_top, axis=1))
 
-# Step 0: Select benefit and cost criteria
-st.subheader("Step 0: Select Criteria Types")
-benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria_cols.tolist())
-cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria_cols if c not in benefit_criteria])
-
-if benefit_criteria or cost_criteria:
-    selected_criteria = benefit_criteria + cost_criteria
-
-    # Step 1: Normalize the data
-    st.subheader("Step 1: Normalize the Data")
-    normalized = numeric_df.copy()
-    for col in criteria_cols:
-        normalized[col] = numeric_df[col] / np.sqrt((numeric_df[col]**2).sum())
-    st.dataframe(normalized)
-
-    # Step 2: Weighted Normalized Matrix
-    st.subheader("Step 2: Weighted Normalized Matrix")
-    st.write("Enter weights for each selected criterion (must sum to 1):")
-    weights = []
-    for col in selected_criteria:
-        w = st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0,
-                            value=1.0/len(selected_criteria), step=0.01)
-        weights.append(w)
-
-    weight_sum = round(sum(weights),4)
-    st.write(f"**Current Weight Sum:** {weight_sum}")
-
-    weighted_normalized = normalized[selected_criteria].copy()
-    for i, col in enumerate(selected_criteria):
-        weighted_normalized[col] = weighted_normalized[col] * weights[i]
-
-    st.dataframe(weighted_normalized)
-
-    # Step 3: MOORA Benefit - Cost
-    if weight_sum != 1.0:
-        st.warning("⚠️ Weights must sum to 1 to proceed with ranking.")
-    else:
-        st.subheader("Step 3: Calculate MOORA Score (Benefit − Cost)")
-        benefit_data = weighted_normalized[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(stocks),0)))
-        cost_data = weighted_normalized[cost_criteria] if cost_criteria else pd.DataFrame(np.zeros((len(stocks),0)))
-
-        score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
-        result = pd.DataFrame({'Stock': stocks, 'MOORA Score (Benefit - Cost)': score.round(4)})
-        st.dataframe(result)
-
-        # Step 4: Ranking
-        st.subheader("Step 4: Final Rankings")
-        result = result.sort_values('MOORA Score (Benefit - Cost)', ascending=False).reset_index(drop=True)
-        result['Rank'] = range(1, len(result) + 1)
-        result['MOORA Score (Benefit - Cost)'] = result['MOORA Score (Benefit - Cost)'].map('{:.4f}'.format)
-
-        def highlight_top(row):
-            return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
-
-        st.dataframe(result.style.apply(highlight_top, axis=1))
-
-        # Announce the best alternative
-        best_stock = result.loc[0, 'Stock']
-        st.success(f"🏆 **The Best Alternative is:** {best_stock} 🎉💹")
-
-        # Step 5: Vertical Bar Chart
-        st.subheader("Step 5: Visualize MOORA Scores")
-        fig, ax = plt.subplots(figsize=(8,4))
-        ax.bar(result['Stock'], result['MOORA Score (Benefit - Cost)'].astype(float), color='skyblue')
-        ax.set_xlabel("Stock")
-        ax.set_ylabel("MOORA Score")
-        ax.set_title("Stock Ranking Using MOORA")
-        st.pyplot(fig)
-
-        # Download CSV
-        st.subheader("Download Result")
-        csv = result.to_csv(index=False).encode('utf-8')
-        st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")
-else:
-    st.warning("Please select at least one benefit or cost criterion to continue.")
+    # Announce the best alternative
+    best_alt = ranking.loc[0, 'Alternative']
+    st.success(f"🏆 **The Best Alternative is:** {best_alt} 🎉💹")

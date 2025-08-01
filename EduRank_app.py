@@ -113,7 +113,7 @@ else:
     fig, ax = plt.subplots(figsize=(8,4))
     ax.bar(ranking['Alternative'], ranking['Performance Score'].astype(float), color='skyblue')
     ax.set_xlabel("Alternatives")
-    ax.set_ylabel("MOORA Score")
+    ax.set_ylabel("Performance Score")
     ax.set_title("Stock Ranking Using MOORA")
     plt.xticks(rotation=0)
     st.pyplot(fig)

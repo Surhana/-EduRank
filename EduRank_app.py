@@ -86,4 +86,9 @@ if benefit_criteria:
 
     # Download CSV
     csv = result.to_csv(index=False).encode('utf-8')
-    st.download_button("Download Results as CSV", csv, "_
+    st.download_button(
+    label="Download Results as CSV",
+    data=csv,
+    file_name="edurank_results.csv",
+    mime="text/csv"
+)

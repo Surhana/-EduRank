@@ -114,7 +114,6 @@ else:
     ax.bar(ranking['Alternative'], ranking['Performance Score'].astype(float), color='skyblue')
     ax.set_xlabel("Alternatives")
     ax.set_ylabel("Performance Score")
-    ax.set_title("Stock Ranking Using MOORA (Performance Score)")
     plt.xticks(rotation=0)
     st.pyplot(fig)
 

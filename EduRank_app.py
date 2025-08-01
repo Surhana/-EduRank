@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 st.title("EduRank: MOORA-Based Stock Selection for Educational Innovation")
 st.markdown("""
 This app evaluates and ranks stocks based on multiple criteria using the **MOORA (Multi-Objective Optimization on the Basis of Ratio Analysis)** method.
-Upload your stock dataset, assign weights to each criterion, and view rankings with a clear bar chart.
+Upload your stock dataset, assign weights to each criterion, and view rankings with clear tables and a bar chart.
 """)
 
 # File uploader
@@ -32,9 +32,10 @@ else:
     df = load_example()
 
 st.subheader("Stock Data")
+df = df.rename(columns={df.columns[0]: "Alternative"})  # Ensure first column is Alternative
 st.dataframe(df)
 
-stocks = df.iloc[:, 0]
+alternatives = df["Alternative"]
 criteria = df.columns[1:]
 data = df.iloc[:, 1:].astype(float)
 
@@ -51,66 +52,67 @@ st.subheader("Step 1: Normalize the Data")
 normalized = data.copy()
 for i, col in enumerate(criteria):
     normalized[col] = data[col] / np.sqrt((data[col]**2).sum())
+
+normalized.insert(0, "Alternative", alternatives)  # Add Alternative column
 st.dataframe(normalized)
 
 # Step 2: Weighted Normalized Matrix
 st.subheader("Step 2: Weighted Normalized Matrix")
 weighted = normalized.copy()
 for i, col in enumerate(criteria):
-    weighted[col] = weighted[col] * weights[i]
+    weighted[col] = normalized[col] * weights[i]
+
+weighted.insert(0, "Alternative", alternatives)
 st.dataframe(weighted)
 
-# Step 3: MOORA Performance Index (PIS) with values
+# Step 3: MOORA Performance Index (PIS)
 st.subheader("Step 3: MOORA Performance Index (PIS)")
 
 # Calculate PIS and NIS
-positive_ideal_solution = weighted.max()
-negative_ideal_solution = weighted.min()
+weighted_matrix = weighted.drop(columns=["Alternative"])
+positive_ideal_solution = weighted_matrix.max()
+negative_ideal_solution = weighted_matrix.min()
 
+# Show PIS & NIS as table with Alternatives
 st.write("Positive Ideal Solution (PIS):")
-st.dataframe(pd.DataFrame(positive_ideal_solution).T)
+st.dataframe(pd.DataFrame([positive_ideal_solution], columns=criteria))
+
 st.write("Negative Ideal Solution (NIS):")
-st.dataframe(pd.DataFrame(negative_ideal_solution).T)
+st.dataframe(pd.DataFrame([negative_ideal_solution], columns=criteria))
 
-# Calculate Euclidean distances
-distance_pis = np.sqrt(((weighted - positive_ideal_solution)**2).sum(axis=1))
-distance_nis = np.sqrt(((weighted - negative_ideal_solution)**2).sum(axis=1))
-
-# Show distances
-st.write("Euclidean Distance from PIS:")
-st.dataframe(pd.DataFrame(distance_pis, columns=["Distance from PIS"]))
-st.write("Euclidean Distance from NIS:")
-st.dataframe(pd.DataFrame(distance_nis, columns=["Distance from NIS"]))
-
-# Relative closeness
+# Euclidean distances
+distance_pis = np.sqrt(((weighted_matrix - positive_ideal_solution)**2).sum(axis=1))
+distance_nis = np.sqrt(((weighted_matrix - negative_ideal_solution)**2).sum(axis=1))
 relative_closeness = distance_nis / (distance_pis + distance_nis)
-st.write("Relative Closeness Scores:")
-st.dataframe(pd.DataFrame(relative_closeness, columns=["Relative Closeness"]))
+
+# Combine Step 3 table
+step3_table = pd.DataFrame({
+    "Alternative": alternatives,
+    "Distance from PIS": distance_pis,
+    "Distance from NIS": distance_nis,
+    "Relative Closeness": relative_closeness
+})
+st.dataframe(step3_table)
 
 # Step 4: Final Rankings
 st.subheader("Step 4: Final Rankings")
-ranking = pd.DataFrame({
-    'Stock': stocks,
-    'Distance from PIS': distance_pis,
-    'Distance from NIS': distance_nis,
-    'Relative Closeness': relative_closeness
-}).sort_values(by="Relative Closeness", ascending=False).reset_index(drop=True)
+ranking = step3_table.sort_values(by="Relative Closeness", ascending=False).reset_index(drop=True)
 
 # Highlight best alternative
-best_stock = ranking.iloc[0]['Stock']
+best_stock = ranking.iloc[0]['Alternative']
 st.success(f"🏆 The Best Alternative is: {best_stock} 🎉 ✅")
 
-# Display final ranking
+# Display final ranking table with Alternative column
 st.dataframe(ranking.style.apply(lambda row: ['background-color: lightgreen'] * len(row) if row.name == 0 else ['']*len(row), axis=1))
 
-# Bar Chart for Ranking
+# Ranking Chart
 st.subheader("Ranking the Chart")
-fig, ax = plt.subplots(figsize=(20,6))  # Wide figure for 100+ stocks
-ax.bar(ranking['Stock'], ranking['Relative Closeness'], color='skyblue')
-ax.set_xlabel("Stocks")
+fig, ax = plt.subplots(figsize=(20,6))
+ax.bar(ranking['Alternative'], ranking['Relative Closeness'], color='skyblue')
+ax.set_xlabel("Alternatives")
 ax.set_ylabel("Relative Closeness")
 ax.set_title("Stock Ranking Using MOORA")
-plt.xticks(rotation=90)  # Rotate labels for readability
+plt.xticks(rotation=90)
 st.pyplot(fig)
 
 # Download Results

@@ -46,8 +46,6 @@ criteria_cols = df.columns[1:]
 numeric_df = df[criteria_cols].astype(float)
 
 # -----------------------
-# Step 0: Select criteria
-# -----------------------
 st.subheader("Step 0: Select Criteria Types")
 benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria_cols.tolist())
 cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria_cols if c not in benefit_criteria])

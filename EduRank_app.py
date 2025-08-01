@@ -68,7 +68,7 @@ else:
     weighted_df = pd.concat([alternatives, weighted_matrix], axis=1)
     st.dataframe(weighted_df)
 
-        # ---------------- STEP 3: MOORA Score (Benefit - Cost) ----------------
+    # ---------------- STEP 3: MOORA Score (Benefit - Cost) ----------------
     st.subheader("Step 3: Calculate MOORA Score (Benefit − Cost)")
 
     # Ask user to classify criteria
@@ -103,11 +103,11 @@ else:
     st.success(f"🏆 **The Best Alternative is:** {best_alt} 🎉💹")
 
     # ---------------- STEP 5: Vertical Bar Chart ----------------
-    st.subheader("Step 5: Visualize Relative Closeness")
+    st.subheader("Step 5: Visualize MOORA Scores")
     fig, ax = plt.subplots(figsize=(8,4))
-    ax.bar(ranking['Alternative'], ranking['Relative Closeness'], color='skyblue')
+    ax.bar(ranking['Alternative'], ranking['MOORA Score (Benefit-Cost)'].astype(float), color='skyblue')
     ax.set_xlabel("Alternatives")
-    ax.set_ylabel("Relative Closeness")
+    ax.set_ylabel("MOORA Score")
     ax.set_title("Stock Ranking Using MOORA")
     plt.xticks(rotation=0)
     st.pyplot(fig)
@@ -115,4 +115,4 @@ else:
     # ---------------- DOWNLOAD CSV ----------------
     st.subheader("Download Result")
     csv = ranking.to_csv(index=False).encode('utf-8')
-    st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv"). only the step 3 and 4 
+    st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")

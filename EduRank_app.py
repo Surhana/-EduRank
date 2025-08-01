@@ -95,14 +95,23 @@ step3_table = pd.DataFrame({
 })
 st.dataframe(step3_table)
 
-# ---------------- STEP 4: Final Rankings ----------------
-st.subheader("Step 4: Final Rankings")
-ranking = step3_table.sort_values(by="Relative Closeness", ascending=False).reset_index(drop=True)
+# Step 4: Final Rankings
+    st.subheader("Step 4: Final Rankings")
+    result = result.sort_values('Benefit - Cost', ascending=False).reset_index(drop=True)
+    result['Rank'] = range(1, len(result) + 1)  # 1,2,3...
 
-# Highlight best alternative
-best_stock = ranking.iloc[0]['Alternative']
-st.success(f"🏆 The Best Alternative is: {best_stock} 🎉 ✅")
+    # Ensure Benefit - Cost shows 4 decimal places in final table
+    result['Benefit - Cost'] = result['Benefit - Cost'].map('{:.4f}'.format)
 
+    # Highlight the top-ranked alternative in green
+    def highlight_top(row):
+        return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
+
+    st.dataframe(result.style.apply(highlight_top, axis=1))
+
+    # Announce the best alternative
+    best_stock = result.loc[0, 'Stock']
+    st.success(f"🏆 **The Best Alternative is:** {best_stock} 🎉💹")
 # Display final ranking table
 st.dataframe(ranking.style.apply(
     lambda row: ['background-color: lightgreen'] * len(row) if row.name == 0 else ['']*len(row), axis=1))

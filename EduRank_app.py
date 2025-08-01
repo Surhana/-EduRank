@@ -105,7 +105,7 @@ if benefit_criteria or cost_criteria:
 
     # Announce the best alternative
     best_stock = result.loc[0, 'Stock']
-    st.success(f"🏆 **The Best Alternative is:** {best_stock} 🎉💹")
+    st.success(f"🏆 **The Best Alternative is:** {best_stock}")
 
     # Download CSV
     csv = result.to_csv(index=False).encode('utf-8')

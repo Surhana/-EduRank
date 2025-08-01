@@ -51,75 +51,62 @@ cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in crite
 
 if benefit_criteria or cost_criteria:
 
-    selected_criteria = benefit_criteria + cost_criteria
+   # Input weights for each criterion
+st.subheader("Input Weights (must sum to 1)")
+weights = []
+for i, col in enumerate(criteria):
+    weight = st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0, value=1/len(criteria), step=0.01)
+    weights.append(weight)
 
-    # Step 1: Normalize the data (always shown)
+# Ensure weights sum to 1
+if sum(weights) != 1:
+    st.warning("Weights must sum to 1! Please adjust the weights.") 
+
+    # Step 1: Normalize the data
     st.subheader("Step 1: Normalize the Data")
     normalized = numeric_df.copy()
     for col in criteria_cols:
         normalized[col] = numeric_df[col] / np.sqrt((numeric_df[col]**2).sum())
     st.dataframe(normalized)
 
-    # Step 2: Input weights and weighted normalized matrix
-    st.subheader("Step 2: Weighted Normalized Matrix")
-    st.write("Enter weights for each selected criterion (must sum to 1):")
-    weights = []
-    for col in selected_criteria:
-        weight = st.number_input(
-            f"Weight for {col}", 
-            min_value=0.0, max_value=1.0, 
-            value=1/len(selected_criteria), step=0.01
-        )
-        weights.append(weight)
+    # Step 3: Calculate Benefit - Cost using weighted normalized values
+    st.subheader("Step 3: Calculate Benefit Minus Cost (MOORA Score)")
+    benefit_data = weighted_normalized[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(stocks),0)))
+    cost_data = weighted_normalized[cost_criteria] if cost_criteria else pd.DataFrame(np.zeros((len(stocks),0)))
 
-    weight_sum = round(sum(weights),4)
-    st.write(f"**Current weight sum:** {weight_sum}")
+    score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
 
-    # Create weighted normalized matrix
-    weighted_normalized = normalized[selected_criteria].copy()
-    for i, col in enumerate(selected_criteria):
-        weighted_normalized[col] = weighted_normalized[col] * weights[i]
-    st.dataframe(weighted_normalized)
+    result = pd.DataFrame({
+        'Stock': stocks,
+        'Benefit - Cost': score.round(4)  # 4 decimal places
+    })
+    st.dataframe(result)
 
-    # Only proceed if weights sum to 1
-    if weight_sum != 1.0:
-        st.warning("⚠️ Weights must sum to 1 to proceed with ranking.")
-    else:
-        # Step 3: Calculate Benefit - Cost
-        st.subheader("Step 3: Calculate Benefit Minus Cost (MOORA Score)")
-        benefit_data = weighted_normalized[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(stocks),0)))
-        cost_data = weighted_normalized[cost_criteria] if cost_criteria else pd.DataFrame(np.zeros((len(stocks),0)))
-        score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
+    # Step 4: Final Rankings
+    st.subheader("Step 4: Final Rankings")
+    result = result.sort_values('Benefit - Cost', ascending=False).reset_index(drop=True)
+    result['Rank'] = range(1, len(result) + 1)  # 1,2,3...
 
-        result = pd.DataFrame({
-            'Stock': stocks,
-            'Benefit - Cost': score.round(4)  # 4 decimal places
-        })
-        st.dataframe(result)
+    # Ensure Benefit - Cost shows 4 decimal places in final table
+    result['Benefit - Cost'] = result['Benefit - Cost'].map('{:.4f}'.format)
 
-        # Step 4: Final Rankings
-        st.subheader("Step 4: Final Rankings")
-        result = result.sort_values('Benefit - Cost', ascending=False).reset_index(drop=True)
-        result['Rank'] = range(1, len(result) + 1)  # 1,2,3...
-        result['Benefit - Cost'] = result['Benefit - Cost'].map('{:.4f}'.format)
+    # Highlight the top-ranked alternative in green
+    def highlight_top(row):
+        return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
 
-        # Highlight the top-ranked alternative in green
-        def highlight_top(row):
-            return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
+    st.dataframe(result.style.apply(highlight_top, axis=1))
 
-        st.dataframe(result.style.apply(highlight_top, axis=1))
+    # Announce the best alternative
+    best_stock = result.loc[0, 'Stock']
+    st.success(f"🏆 **The Best Alternative is:** {best_stock} 🎉💹")
 
-        # Announce the best alternative
-        best_stock = result.loc[0, 'Stock']
-        st.success(f"🏆 **The Best Alternative is:** {best_stock} 🎉💹")
-
-        # Download CSV
-        csv = result.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Download Results as CSV",
-            data=csv,
-            file_name="edurank_results.csv",
-            mime="text/csv"
-        )
+    # Download CSV
+    csv = result.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download Results as CSV",
+        data=csv,
+        file_name="edurank_results.csv",
+        mime="text/csv"
+    )
 else:
     st.warning("Please select at least one benefit or cost criterion to continue.")

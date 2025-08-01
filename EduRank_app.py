@@ -86,7 +86,7 @@ else:
 
     moora_df = pd.DataFrame({
         "Alternative": alternatives,
-        "MOORA Score (Benefit-Cost)": moora_score.round(4)
+        "Performance Score": moora_score.round(4)
     })
     st.dataframe(moora_df)
 
@@ -96,7 +96,7 @@ else:
     ranking['Rank'] = range(1, len(ranking) + 1)
 
     # Format MOORA Score to 4 decimals in ranking table
-    ranking['MOORA Score (Benefit-Cost)'] = ranking['MOORA Score (Benefit-Cost)'].map('{:.4f}'.format)
+    ranking['Performance Score'] = ranking['Performance Score'].map('{:.4f}'.format)
 
     # Highlight the top-ranked alternative in green
     def highlight_top(row):

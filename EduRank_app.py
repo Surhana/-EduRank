@@ -41,7 +41,7 @@ st.subheader("Uploaded/Example Data")
 st.dataframe(df)
 
 # Extract stock names and numeric criteria
-stocks = df.iloc[:,0]
+Alternative = df.iloc[:,0]
 criteria_cols = df.columns[1:]
 numeric_df = df[criteria_cols].astype(float)
 

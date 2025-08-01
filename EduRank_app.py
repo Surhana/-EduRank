@@ -57,7 +57,7 @@ cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in crite
 if weight_sum != 1:
     st.warning("Weights must sum to 1 to proceed.")
 elif not benefit_criteria and not cost_criteria:
-    st.warning("Please select the benefit or cost criterion.")
+    st.warning("Please select based on their criterion.")
 else:
     # ---------------- STEP 1: Normalize ----------------
     st.subheader("Step 1: Normalize the Data")

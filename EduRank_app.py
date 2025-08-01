@@ -75,27 +75,27 @@ else:
     weighted_df = pd.concat([alternatives, weighted_matrix], axis=1)
     st.dataframe(weighted_df)
 
-    # ---------------- STEP 3: MOORA Score (Benefit - Cost) ----------------
-    st.subheader("Step 3: Calculate Performance Score")
+    # ---------------- STEP 3: Calculate Performance Score ----------------
+    st.subheader("Step 3: Calculate Performance Score (Benefit − Cost)")
 
-    # Compute MOORA scores
+    # Compute MOORA (Performance Score)
     benefit_data = weighted_matrix[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))
     cost_data = weighted_matrix[cost_criteria] if cost_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))
 
-    moora_score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
+    performance_score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
 
-    moora_df = pd.DataFrame({
+    perf_df = pd.DataFrame({
         "Alternative": alternatives,
-        "Performance Score": moora_score.round(4)
+        "Performance Score": performance_score.round(4)
     })
-    st.dataframe(moora_df)
+    st.dataframe(perf_df)
 
     # ---------------- STEP 4: Final Rankings ----------------
     st.subheader("Step 4: Final Rankings")
-    ranking = moora_df.sort_values('Performance Score', ascending=False).reset_index(drop=True)
+    ranking = perf_df.sort_values('Performance Score', ascending=False).reset_index(drop=True)
     ranking['Rank'] = range(1, len(ranking) + 1)
 
-    # Format MOORA Score to 4 decimals in ranking table
+    # Format Performance Score to 4 decimals in ranking table
     ranking['Performance Score'] = ranking['Performance Score'].map('{:.4f}'.format)
 
     # Highlight the top-ranked alternative in green
@@ -109,12 +109,12 @@ else:
     st.success(f"🏆 **The Best Alternative is:** {best_alt} 🎉💹")
 
     # ---------------- STEP 5: Vertical Bar Chart ----------------
-    st.subheader("Ranking the Chart")
+    st.subheader("Step 5: Visualize Performance Scores")
     fig, ax = plt.subplots(figsize=(8,4))
     ax.bar(ranking['Alternative'], ranking['Performance Score'].astype(float), color='skyblue')
     ax.set_xlabel("Alternatives")
     ax.set_ylabel("Performance Score")
-    ax.set_title("Stock Ranking Using MOORA")
+    ax.set_title("Stock Ranking Using MOORA (Performance Score)")
     plt.xticks(rotation=0)
     st.pyplot(fig)
 

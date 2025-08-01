@@ -76,7 +76,7 @@ else:
     st.dataframe(weighted_df)
 
     # ---------------- STEP 3: MOORA Score (Benefit - Cost) ----------------
-    st.subheader("Step 3: Calculate MOORA Score (Benefit − Cost)")
+    st.subheader("Step 3: Calculate Performance Score")
 
     # Compute MOORA scores
     benefit_data = weighted_matrix[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))
@@ -92,7 +92,7 @@ else:
 
     # ---------------- STEP 4: Final Rankings ----------------
     st.subheader("Step 4: Final Rankings")
-    ranking = moora_df.sort_values('MOORA Score (Benefit-Cost)', ascending=False).reset_index(drop=True)
+    ranking = moora_df.sort_values('Performance Score', ascending=False).reset_index(drop=True)
     ranking['Rank'] = range(1, len(ranking) + 1)
 
     # Format MOORA Score to 4 decimals in ranking table
@@ -109,7 +109,7 @@ else:
     st.success(f"🏆 **The Best Alternative is:** {best_alt} 🎉💹")
 
     # ---------------- STEP 5: Vertical Bar Chart ----------------
-    st.subheader("Step 5: Visualize MOORA Scores")
+    st.subheader("Ranking the Chart")
     fig, ax = plt.subplots(figsize=(8,4))
     ax.bar(ranking['Alternative'], ranking['MOORA Score (Benefit-Cost)'].astype(float), color='skyblue')
     ax.set_xlabel("Alternatives")

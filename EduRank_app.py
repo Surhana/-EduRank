@@ -121,7 +121,7 @@ if benefit_criteria or cost_criteria:
         st.dataframe(result.style.apply(highlight_top, axis=1))
 
         best_alternative = result.loc[0, 'Alternative']
-        st.success(f"🏆 **The Best Alternative is:** {best_alternative} 🎉💹")
+        st.success(f"🏆 **The Best Alternative is:** {best_alternative}")
      
         # -----------------------
         st.subheader("Ranking the Chart")

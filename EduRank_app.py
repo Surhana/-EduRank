@@ -124,11 +124,9 @@ if benefit_criteria or cost_criteria:
 
         best_alternative = result.loc[0, 'Alternative']
         st.success(f"🏆 **The Best Alternative is:** {best_alternative} 🎉💹")
-
+     
         # -----------------------
-        # Step 5: Vertical Bar Chart (Streamlit native)
-        # -----------------------
-        st.subheader("Step 5: Visualization - Benefit - Cost Scores")
+        st.subheader("Ranking the Chart")
         chart_data = result[['Alternative', 'Benefit - Cost']].copy()
         chart_data['Benefit - Cost'] = chart_data['Benefit - Cost'].astype(float)
         chart_data = chart_data.set_index('Alternative')

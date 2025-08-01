@@ -51,33 +51,23 @@ cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in crite
 
 if benefit_criteria or cost_criteria:
 
+   # Input weights for each criterion
+st.subheader("Input Weights (must sum to 1)")
+weights = []
+for i, col in enumerate(criteria):
+    weight = st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0, value=1/len(criteria), step=0.01)
+    weights.append(weight)
+
+# Ensure weights sum to 1
+if sum(weights) != 1:
+    st.warning("Weights must sum to 1! Please adjust the weights.") 
+
     # Step 1: Normalize the data
     st.subheader("Step 1: Normalize the Data")
     normalized = numeric_df.copy()
     for col in criteria_cols:
         normalized[col] = numeric_df[col] / np.sqrt((numeric_df[col]**2).sum())
     st.dataframe(normalized)
-
-    # Step 2: Weighted Normalized Matrix
-    st.subheader("Step 2: Weighted Normalized Matrix (Benefit & Cost)")
-    weights = []
-    st.write("Enter weights for each selected criterion (must sum to 1):")
-    for col in benefit_criteria + cost_criteria:
-        w = st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0, value=1.0/len(benefit_criteria+cost_criteria), step=0.01)
-        weights.append(w)
-
-    # Convert to numpy array for calculations
-    weights = np.array(weights)
-
-    # Create weighted normalized dataframe
-    selected_criteria = benefit_criteria + cost_criteria
-    weighted_normalized = normalized[selected_criteria].copy()
-    for i, col in enumerate(selected_criteria):
-        weighted_normalized[col] = weighted_normalized[col] * weights[i]
-
-    # Display weighted normalized matrix
-    st.write("Weighted Normalized Matrix:")
-    st.dataframe(weighted_normalized)
 
     # Step 3: Calculate Benefit - Cost using weighted normalized values
     st.subheader("Step 3: Calculate Benefit Minus Cost (MOORA Score)")

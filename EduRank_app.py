@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 st.title("EduRank: MOORA-Based Stock Selection for Educational Innovation")
 st.markdown("""
 This app evaluates and ranks stocks based on multiple criteria using the **MOORA** method.
-Upload your stock dataset, assign weights to each criterion, and view rankings with tables and a bar chart.
+Upload your stock dataset, assign weights to each criterion, choose benefit/cost criteria,
+and view rankings with tables and a bar chart.
 """)
 
 # File uploader
@@ -41,16 +42,22 @@ alternatives = df["Alternative"]
 criteria = df.columns[1:]
 data = df.iloc[:, 1:].astype(float)
 
-# Step 0: Input weights
-st.subheader("Step 0: Input Weights (must sum to 1)")
+# ---------------- STEP 0: Input weights & Select criteria ----------------
+st.subheader("Step 0: Input Weights and Select Criteria")
 weights = [st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0, 
                            value=1/len(criteria), step=0.01) for col in criteria]
 
 weight_sum = round(sum(weights),4)
 st.write(f"**Current weight sum:** {weight_sum}")
 
+# Select benefit and cost criteria below weight inputs
+benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria.tolist())
+cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria if c not in benefit_criteria])
+
 if weight_sum != 1:
     st.warning("Weights must sum to 1 to proceed.")
+elif not benefit_criteria and not cost_criteria:
+    st.warning("Please select at least one benefit or cost criterion.")
 else:
     # ---------------- STEP 1: Normalize ----------------
     st.subheader("Step 1: Normalize the Data")
@@ -70,10 +77,6 @@ else:
 
     # ---------------- STEP 3: MOORA Score (Benefit - Cost) ----------------
     st.subheader("Step 3: Calculate MOORA Score (Benefit − Cost)")
-
-    # Ask user to classify criteria
-    benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria.tolist())
-    cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria if c not in benefit_criteria])
 
     # Compute MOORA scores
     benefit_data = weighted_matrix[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))

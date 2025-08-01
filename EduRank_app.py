@@ -1,31 +1,32 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from io import BytesIO
 
-# Title and description
 st.title("EduRank: MOORA-Based Stock Selection for Educational Innovation")
-st.markdown("""
-This app evaluates and ranks stocks based on multiple criteria using the **MOORA (Multi-Objective Optimization on the Basis of Ratio Analysis)** method. 
-Upload your stock dataset, specify weights for each criterion, and the system will compute rankings based on the MOORA method.
-""") 
 
-# File uploader for decision matrix (stock data)
+st.markdown("""
+Upload your stock dataset, then select which columns are **Benefit** and **Cost** criteria.
+The app will normalize your data, calculate **Benefit - Cost** scores, and rank the alternatives.
+""")
+
+# File uploader
 uploaded_file = st.file_uploader("Upload Excel or CSV file with stock data", type=["csv", "xlsx"])
 
-# Example fallback dataset
+# Example dataset
 def load_example():
     data = {
-        'Stock': ['A', 'B', 'C'],
-        'Price': [100, 120, 95],
-        'P/E Ratio': [15, 18, 12],
-        'Dividend Yield': [2.5, 3.0, 2.8],
-        'Growth Rate': [8, 7, 9]
+        'Stock': ['KPJ','IHH','DPHARMA'],
+        'Earnings per Share': [0.29,0.80,0.17],
+        'Dividend per Share': [0.23,0.55,0.16],
+        'Net Tangible Asset': [0.11,0.70,0.15],
+        'Dividend Yield': [0.15,0.15,0.25],
+        'Return on Equity': [0.65,0.41,0.41],
+        'P/E Ratio': [0.41,0.25,0.21],
+        'PTBV': [0.81,0.31,0.26]
     }
     return pd.DataFrame(data)
 
-# Load the data
-df = None
+# Load data
 if uploaded_file:
     if uploaded_file.name.endswith("csv"):
         df = pd.read_csv(uploaded_file)
@@ -35,82 +36,54 @@ else:
     st.info("No file uploaded. Using example dataset.")
     df = load_example()
 
-# Display the uploaded data or example
-st.subheader("Stock Data")
+st.subheader("Uploaded/Example Data")
 st.dataframe(df)
 
-# Extract stock names and criteria
-stocks = df.iloc[:, 0]  # Stock names
-criteria = df.columns[1:]  # All columns except the first (stock names)
-data = df.iloc[:, 1:].astype(float)  # Data excluding stock names
+# Extract stock names and numeric criteria
+stocks = df.iloc[:,0]
+criteria_cols = df.columns[1:]
+numeric_df = df[criteria_cols].astype(float)
 
-# Define Benefit and Cost Criteria (manual inputs for this example)
-benefit_criteria = ['EPS', 'DPS', 'NTA', 'DY', 'ROE']  # Update based on your dataset
-cost_criteria = ['PE', 'PTBV']  # Update based on your dataset
+# Step 0: Let user pick benefit and cost columns dynamically
+st.subheader("Select Criteria Types")
+benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria_cols.tolist())
+cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria_cols if c not in benefit_criteria])
 
-# Check if cost criteria exist in the data
-existing_cost_criteria = [col for col in cost_criteria if col in criteria]
-missing_cost_criteria = [col for col in cost_criteria if col not in criteria]
+if benefit_criteria:
+    # Step 1: Normalize the data
+    st.subheader("Step 1: Normalize the Data")
+    normalized = numeric_df.copy()
+    for col in criteria_cols:
+        normalized[col] = numeric_df[col] / np.sqrt((numeric_df[col]**2).sum())
+    st.dataframe(normalized)
 
-# Ensure the columns in the criteria lists are present in the data
-missing_benefit = [col for col in benefit_criteria if col not in criteria]
+    # Step 2: Separate tables
+    st.subheader("Step 2: Separate Tables for Benefit and Cost Criteria")
+    st.write("Benefit Criteria")
+    st.dataframe(normalized[benefit_criteria])
+    if cost_criteria:
+        st.write("Cost Criteria")
+        st.dataframe(normalized[cost_criteria])
 
-if missing_benefit:
-    st.error(f"Missing benefit criteria columns: {', '.join(missing_benefit)}")
+    # Step 3: Calculate Benefit - Cost
+    st.subheader("Step 3: Calculate Benefit Minus Cost")
+    if cost_criteria:
+        score = normalized[benefit_criteria].sum(axis=1) - normalized[cost_criteria].sum(axis=1)
+    else:
+        score = normalized[benefit_criteria].sum(axis=1)
 
-# Display all available columns
-st.write("Available Columns in the Dataset:")
-st.write(criteria)
+    result = pd.DataFrame({
+        'Stock': stocks,
+        'Benefit - Cost': score
+    })
+    st.dataframe(result)
 
-# Normalize the data using vector normalization
-st.subheader("Step 1: Normalize the Data")
-normalized = data.copy()
-for i, col in enumerate(criteria):
-    norm = data[col] / np.sqrt((data[col]**2).sum())
-    normalized[col] = norm
-st.dataframe(normalized)
+    # Step 4: Rank
+    st.subheader("Step 4: Final Rankings")
+    result['Rank'] = result['Benefit - Cost'].rank(ascending=False)
+    result = result.sort_values('Rank')
+    st.dataframe(result)
 
-# Step 2: Sorting Normalized Values based on Benefit and Cost Criteria
-st.subheader("Step 2: Separate Tables for Benefit and Cost Criteria")
-
-# Sort and display Benefit Criteria
-benefit_data = normalized[benefit_criteria]
-st.write("Benefit Criteria")
-st.dataframe(benefit_data)
-
-# Sort and display Cost Criteria (only if cost criteria are present)
-if existing_cost_criteria:
-    cost_data = normalized[existing_cost_criteria]
-    st.write("Cost Criteria")
-    st.dataframe(cost_data)
-else:
-    st.warning("Cost criteria columns (PE, PTBV) are missing in the dataset!")
-
-# Step 3: Calculate Benefit Minus Cost (For PIS and NIS Calculation)
-st.subheader("Step 3: Calculate Benefit Minus Cost")
-
-# If there are cost criteria, subtract them from the benefit criteria
-if existing_cost_criteria:
-    benefit_minus_cost = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
-else:
-    # If no cost criteria, just use benefit sum
-    benefit_minus_cost = benefit_data.sum(axis=1)
-
-# Add the result to the data and preserve the stock names
-normalized['Benefit - Cost'] = benefit_minus_cost
-normalized['Stock'] = stocks  # Make sure stock names are included
-st.dataframe(normalized)
-
-# Step 4: Rank the Alternatives Based on the Calculated Scores
-st.subheader("Step 4: Final Rankings")
-normalized['Rank'] = normalized['Benefit - Cost'].rank(ascending=False)
-normalized = normalized[['Stock', 'Benefit - Cost', 'Rank']]  # Ensure stock names and rank are shown
-st.dataframe(normalized)
-
-# Download Results as CSV
-st.subheader("Download Result")
-def convert_df(df):
-    return df.to_csv(index=False).encode('utf-8')
-
-csv = convert_df(normalized)
-st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")
+    # Download CSV
+    csv = result.to_csv(index=False).encode('utf-8')
+    st.download_button("Download Results as CSV", csv, "_

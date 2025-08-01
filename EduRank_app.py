@@ -17,7 +17,7 @@ uploaded_file = st.file_uploader("Upload Excel or CSV file with stock data", typ
 # Example fallback dataset
 def load_example():
     data = {
-        'Stock': ['KPJ','IHH','DPHARMA'],
+        'Alternative': ['KPJ','IHH','DPHARMA'],
         'Earnings per Share': [0.29,0.80,0.17],
         'Dividend per Share': [0.23,0.55,0.16],
         'Net Tangible Asset': [0.11,0.70,0.15],
@@ -62,7 +62,7 @@ if benefit_criteria or cost_criteria:
     normalized = numeric_df.copy()
     for col in criteria_cols:
         normalized[col] = numeric_df[col] / np.sqrt((numeric_df[col]**2).sum())
-    normalized.insert(0, 'Stock', df.iloc[:,0])  # Add Stock column
+    normalized.insert(0, 'Alternative', df.iloc[:,0])  # Add Alternative column
     st.dataframe(normalized)
 
     # -----------------------
@@ -86,7 +86,7 @@ if benefit_criteria or cost_criteria:
     weighted_normalized = normalized[selected_criteria].copy()
     for i, col in enumerate(selected_criteria):
         weighted_normalized[col] = weighted_normalized[col] * weights[i]
-    weighted_normalized.insert(0, 'Stock', df.iloc[:,0])  # Add Stock column
+    weighted_normalized.insert(0, 'Alternative', df.iloc[:,0])  # Add Alternative column
     st.dataframe(weighted_normalized)
 
     # -----------------------
@@ -103,7 +103,7 @@ if benefit_criteria or cost_criteria:
         score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
 
         result_step3 = pd.DataFrame({
-            'Stock': df.iloc[:,0],
+            'Alternative': df.iloc[:,0],
             'Benefit - Cost': score.round(4)
         })
         st.dataframe(result_step3)
@@ -116,22 +116,22 @@ if benefit_criteria or cost_criteria:
         result['Rank'] = range(1, len(result) + 1)  # 1,2,3...
         result['Benefit - Cost'] = result['Benefit - Cost'].map('{:.4f}'.format)
 
-        # Highlight top stock in green
+        # Highlight top alternative in green
         def highlight_top(row):
             return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
 
         st.dataframe(result.style.apply(highlight_top, axis=1))
 
-        best_stock = result.loc[0, 'Stock']
-        st.success(f"🏆 **The Best Alternative is:** {best_stock} 🎉💹")
+        best_alternative = result.loc[0, 'Alternative']
+        st.success(f"🏆 **The Best Alternative is:** {best_alternative} 🎉💹")
 
         # -----------------------
         # Step 5: Vertical Bar Chart (Streamlit native)
         # -----------------------
         st.subheader("Step 5: Visualization - Benefit - Cost Scores")
-        chart_data = result[['Stock', 'Benefit - Cost']].copy()
+        chart_data = result[['Alternative', 'Benefit - Cost']].copy()
         chart_data['Benefit - Cost'] = chart_data['Benefit - Cost'].astype(float)
-        chart_data = chart_data.set_index('Stock')
+        chart_data = chart_data.set_index('Alternative')
 
         st.bar_chart(chart_data)
 

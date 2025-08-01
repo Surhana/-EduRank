@@ -69,7 +69,7 @@ else:
     st.dataframe(weighted_df)
 
     # ---------------- STEP 3: MOORA Score (Benefit - Cost) ----------------
-    st.subheader("Step 3: Calculate MOORA Score (Benefit − Cost)")
+    st.subheader("Step 3: Calculate Performance Score")
 
     # Ask user to classify criteria
     benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria.tolist())
@@ -100,10 +100,10 @@ else:
 
     # Announce the best alternative
     best_alt = ranking.loc[0, 'Alternative']
-    st.success(f"🏆 **The Best Alternative is:** {best_alt} 🎉💹")
+    st.success(f"🏆 **The Best Alternative is:** {best_alt}")
 
     # ---------------- STEP 5: Vertical Bar Chart ----------------
-    st.subheader("Step 5: Visualize MOORA Scores")
+    st.subheader("Ranking the Chart")
     fig, ax = plt.subplots(figsize=(8,4))
     ax.bar(ranking['Alternative'], ranking['MOORA Score (Benefit-Cost)'].astype(float), color='skyblue')
     ax.set_xlabel("Alternatives")

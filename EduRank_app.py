@@ -111,7 +111,7 @@ else:
     # ---------------- STEP 5: Vertical Bar Chart ----------------
     st.subheader("Ranking the Chart")
     fig, ax = plt.subplots(figsize=(8,4))
-    ax.bar(ranking['Alternative'], ranking['MOORA Score (Benefit-Cost)'].astype(float), color='skyblue')
+    ax.bar(ranking['Alternative'], ranking['Performance Score'].astype(float), color='skyblue')
     ax.set_xlabel("Alternatives")
     ax.set_ylabel("MOORA Score")
     ax.set_title("Stock Ranking Using MOORA")

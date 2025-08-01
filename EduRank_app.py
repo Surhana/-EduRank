@@ -1,145 +1,119 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
+# Title
 st.title("EduRank: MOORA-Based Stock Selection for Educational Innovation")
-
 st.markdown("""
-Upload your stock dataset, then select which columns are **Benefit** and **Cost** criteria.
-The app will normalize your data, apply **weights**, calculate **Benefit - Cost** scores, and rank the alternatives.
+This app evaluates and ranks stocks based on multiple criteria using the **MOORA (Multi-Objective Optimization on the Basis of Ratio Analysis)** method.
+Upload your stock dataset, assign weights to each criterion, and view rankings with a clear bar chart.
 """)
 
-# -----------------------
 # File uploader
-# -----------------------
 uploaded_file = st.file_uploader("Upload Excel or CSV file with stock data", type=["csv", "xlsx"])
 
-# Example fallback dataset
+# Example data
 def load_example():
     data = {
-        'Alternative': ['KPJ','IHH','DPHARMA'],
-        'Earnings per Share': [0.29,0.80,0.17],
-        'Dividend per Share': [0.23,0.55,0.16],
-        'Net Tangible Asset': [0.11,0.70,0.15],
-        'Dividend Yield': [0.15,0.15,0.25],
-        'Return on Equity': [0.65,0.41,0.41],
-        'P/E Ratio': [0.41,0.25,0.21],
-        'PTBV': [0.81,0.31,0.26]
+        'Stock': ['A', 'B', 'C'],
+        'Price': [100, 120, 95],
+        'P/E Ratio': [15, 18, 12],
+        'Dividend Yield': [2.5, 3.0, 2.8],
+        'Growth Rate': [8, 7, 9]
     }
     return pd.DataFrame(data)
 
 # Load data
 if uploaded_file:
-    if uploaded_file.name.endswith("csv"):
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_excel(uploaded_file)
+    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith("csv") else pd.read_excel(uploaded_file)
 else:
-    st.info("No file uploaded.")
+    st.info("No file uploaded. Using example dataset.")
     df = load_example()
 
-st.subheader("Uploaded/Example Data")
+st.subheader("Stock Data")
 st.dataframe(df)
 
-# Extract numeric criteria columns
-criteria_cols = df.columns[1:]
-numeric_df = df[criteria_cols].astype(float)
+stocks = df.iloc[:, 0]
+criteria = df.columns[1:]
+data = df.iloc[:, 1:].astype(float)
 
-# -----------------------
-st.subheader("Select Criteria Types")
-benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria_cols.tolist())
-cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria_cols if c not in benefit_criteria])
+# Input weights
+st.subheader("Input Weights (must sum to 1)")
+weights = [st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0, value=1/len(criteria), step=0.01)
+           for col in criteria]
 
-if benefit_criteria or cost_criteria:
-    selected_criteria = benefit_criteria + cost_criteria
+if sum(weights) != 1:
+    st.warning("Weights must sum to 1! Please adjust the weights.")
 
-    # -----------------------
-    # Step 1: Normalize data
-    # -----------------------
-    st.subheader("Step 1: Normalize the Data")
-    normalized = numeric_df.copy()
-    for col in criteria_cols:
-        normalized[col] = numeric_df[col] / np.sqrt((numeric_df[col]**2).sum())
-    normalized.insert(0, 'Alternative', df.iloc[:,0])  # Add Alternative column
-    st.dataframe(normalized)
+# Step 1: Normalize
+st.subheader("Step 1: Normalize the Data")
+normalized = data.copy()
+for i, col in enumerate(criteria):
+    normalized[col] = data[col] / np.sqrt((data[col]**2).sum())
+st.dataframe(normalized)
 
-    # -----------------------
-    # Step 2: Weighted Normalized Matrix
-    # -----------------------
-    st.subheader("Step 2: Weighted Normalized Matrix")
-    st.write("Enter weights for each selected criterion (must sum to 1):")
+# Step 2: Weighted Normalized Matrix
+st.subheader("Step 2: Weighted Normalized Matrix")
+weighted = normalized.copy()
+for i, col in enumerate(criteria):
+    weighted[col] = weighted[col] * weights[i]
+st.dataframe(weighted)
 
-    weights = []
-    for col in selected_criteria:
-        w = st.number_input(
-            f"Weight for {col}", 
-            min_value=0.0, max_value=1.0,
-            value=1.0/len(selected_criteria), step=0.01
-        )
-        weights.append(w)
+# Step 3: MOORA Performance Index (PIS) with values
+st.subheader("Step 3: MOORA Performance Index (PIS)")
 
-    weight_sum = round(sum(weights), 4)
-    st.write(f"**Current Weight Sum:** {weight_sum}")
+# Calculate PIS and NIS
+positive_ideal_solution = weighted.max()
+negative_ideal_solution = weighted.min()
 
-    weighted_normalized = normalized[selected_criteria].copy()
-    for i, col in enumerate(selected_criteria):
-        weighted_normalized[col] = weighted_normalized[col] * weights[i]
-    weighted_normalized.insert(0, 'Alternative', df.iloc[:,0])  # Add Alternative column
-    st.dataframe(weighted_normalized)
+st.write("Positive Ideal Solution (PIS):")
+st.dataframe(pd.DataFrame(positive_ideal_solution).T)
+st.write("Negative Ideal Solution (NIS):")
+st.dataframe(pd.DataFrame(negative_ideal_solution).T)
 
-    # -----------------------
-    # Step 3: Benefit - Cost Score
-    # -----------------------
-    if weight_sum != 1.0:
-        st.warning("⚠️ Weights must sum to 1 to proceed with ranking.")
-    else:
-        st.subheader("Step 3: Calculate Benefit Minus Cost (MOORA Score)")
+# Calculate Euclidean distances
+distance_pis = np.sqrt(((weighted - positive_ideal_solution)**2).sum(axis=1))
+distance_nis = np.sqrt(((weighted - negative_ideal_solution)**2).sum(axis=1))
 
-        benefit_data = weighted_normalized[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(df),0)))
-        cost_data = weighted_normalized[cost_criteria] if cost_criteria else pd.DataFrame(np.zeros((len(df),0)))
+# Show distances
+st.write("Euclidean Distance from PIS:")
+st.dataframe(pd.DataFrame(distance_pis, columns=["Distance from PIS"]))
+st.write("Euclidean Distance from NIS:")
+st.dataframe(pd.DataFrame(distance_nis, columns=["Distance from NIS"]))
 
-        score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
+# Relative closeness
+relative_closeness = distance_nis / (distance_pis + distance_nis)
+st.write("Relative Closeness Scores:")
+st.dataframe(pd.DataFrame(relative_closeness, columns=["Relative Closeness"]))
 
-        result_step3 = pd.DataFrame({
-            'Alternative': df.iloc[:,0],
-            'Benefit - Cost': score.round(4)
-        })
-        st.dataframe(result_step3)
+# Step 4: Final Rankings
+st.subheader("Step 4: Final Rankings")
+ranking = pd.DataFrame({
+    'Stock': stocks,
+    'Distance from PIS': distance_pis,
+    'Distance from NIS': distance_nis,
+    'Relative Closeness': relative_closeness
+}).sort_values(by="Relative Closeness", ascending=False).reset_index(drop=True)
 
-        # -----------------------
-        # Step 4: Final Rankings
-        # -----------------------
-        st.subheader("Step 4: Final Rankings")
-        result = result_step3.sort_values('Benefit - Cost', ascending=False).reset_index(drop=True)
-        result['Rank'] = range(1, len(result) + 1)  # 1,2,3...
-        result['Benefit - Cost'] = result['Benefit - Cost'].map('{:.4f}'.format)
+# Highlight best alternative
+best_stock = ranking.iloc[0]['Stock']
+st.success(f"🏆 The Best Alternative is: {best_stock} 🎉 ✅")
 
-        # Highlight top alternative in green
-        def highlight_top(row):
-            return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
+# Display final ranking
+st.dataframe(ranking.style.apply(lambda row: ['background-color: lightgreen'] * len(row) if row.name == 0 else ['']*len(row), axis=1))
 
-        st.dataframe(result.style.apply(highlight_top, axis=1))
+# Bar Chart for Ranking
+st.subheader("Ranking the Chart")
+fig, ax = plt.subplots(figsize=(20,6))  # Wide figure for 100+ stocks
+ax.bar(ranking['Stock'], ranking['Relative Closeness'], color='skyblue')
+ax.set_xlabel("Stocks")
+ax.set_ylabel("Relative Closeness")
+ax.set_title("Stock Ranking Using MOORA")
+plt.xticks(rotation=90)  # Rotate labels for readability
+st.pyplot(fig)
 
-        best_alternative = result.loc[0, 'Alternative']
-        st.success(f"🏆 **The Best Alternative is:** {best_alternative}")
-     
-        # -----------------------
-        st.subheader("Ranking the Chart")
-        chart_data = result[['Alternative', 'Benefit - Cost']].copy()
-        chart_data['Benefit - Cost'] = chart_data['Benefit - Cost'].astype(float)
-        chart_data = chart_data.set_index('Alternative')
-
-        st.bar_chart(chart_data)
-
-        # -----------------------
-        # Download CSV
-        # -----------------------
-        csv = result.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Download Results as CSV",
-            data=csv,
-            file_name="edurank_results.csv",
-            mime="text/csv"
-        )
-else:
-    st.warning("Please select at least one benefit or cost criterion to continue.")
+# Download Results
+st.subheader("Download Result")
+csv = ranking.to_csv(index=False).encode('utf-8')
+st.download_button("Download Results as CSV", csv, "edurank_results.csv", "text/csv")

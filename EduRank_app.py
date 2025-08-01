@@ -52,6 +52,13 @@ st.write(f"**Current weight sum:** {weight_sum}")
 if weight_sum != 1:
     st.warning("Weights must sum to 1 to proceed.")
 else:
+     # Ask user to classify criteria
+    benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria.tolist())
+    cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria if c not in benefit_criteria])
+
+    # Compute MOORA scores
+    benefit_data = weighted_matrix[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))
+    cost_data = weighted_matrix[cost_criteria] if cost_criteria else pd.DataFrame(np.zeros((len(al
     # ---------------- STEP 1: Normalize ----------------
     st.subheader("Step 1: Normalize the Data")
     normalized_matrix = data.copy()
@@ -71,13 +78,7 @@ else:
     # ---------------- STEP 3: MOORA Score (Benefit - Cost) ----------------
     st.subheader("Step 3: Calculate Performance Score")
 
-    # Ask user to classify criteria
-    benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria.tolist())
-    cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria if c not in benefit_criteria])
-
-    # Compute MOORA scores
-    benefit_data = weighted_matrix[benefit_criteria] if benefit_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))
-    cost_data = weighted_matrix[cost_criteria] if cost_criteria else pd.DataFrame(np.zeros((len(alternatives),0)))
+   ternatives),0)))
 
     moora_score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
 

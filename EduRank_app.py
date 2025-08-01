@@ -106,7 +106,7 @@ else:
 
     # Announce the best alternative
     best_alt = ranking.loc[0, 'Alternative']
-    st.success(f"🏆 **The Best Alternative is:** {best_alt} 🎉💹")
+    st.success(f"🏆 **The Best Alternative is:** {best_alt} ")
 
     # ---------------- STEP 5: Vertical Bar Chart ----------------
     st.subheader("Ranking the Chart")

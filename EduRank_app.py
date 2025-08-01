@@ -50,7 +50,9 @@ weights = [st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0,
 weight_sum = round(sum(weights),4)
 st.write(f"**Current weight sum:** {weight_sum}")
 
-
+# Select benefit and cost criteria below weight inputs
+benefit_criteria = st.multiselect("Select Benefit Criteria Columns", criteria.tolist())
+cost_criteria = st.multiselect("Select Cost Criteria Columns", [c for c in criteria if c not in benefit_criteria])
 
 if weight_sum != 1:
     st.warning("Weights must sum to 1 to proceed.")

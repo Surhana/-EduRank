@@ -95,6 +95,9 @@ else:
     ranking = moora_df.sort_values('MOORA Score (Benefit-Cost)', ascending=False).reset_index(drop=True)
     ranking['Rank'] = range(1, len(ranking) + 1)
 
+    # Format MOORA Score to 4 decimals in ranking table
+    ranking['MOORA Score (Benefit-Cost)'] = ranking['MOORA Score (Benefit-Cost)'].map('{:.4f}'.format)
+
     # Highlight the top-ranked alternative in green
     def highlight_top(row):
         return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)

@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 st.title("EduRank: MOORA-Based Stock Selection for Educational Innovation")
 
@@ -63,7 +64,8 @@ if benefit_criteria or cost_criteria:
     weights = []
     st.write("Enter weights for each selected criterion (must sum to 1):")
     for col in benefit_criteria + cost_criteria:
-        w = st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0, value=1.0/len(benefit_criteria+cost_criteria), step=0.01)
+        w = st.number_input(f"Weight for {col}", min_value=0.0, max_value=1.0,
+                            value=1.0/len(benefit_criteria+cost_criteria), step=0.01)
         weights.append(w)
 
     # Convert to numpy array for calculations
@@ -109,6 +111,16 @@ if benefit_criteria or cost_criteria:
     # Announce the best alternative
     best_stock = result.loc[0, 'Stock']
     st.success(f"🏆 **The Best Alternative is:** {best_stock} 🎉💹")
+
+    # Step 5: Vertical Bar Chart
+    st.subheader("Step 5: Visualization - Benefit - Cost Scores")
+    fig, ax = plt.subplots()
+    ax.bar(result['Stock'], result['Benefit - Cost'].astype(float))
+    ax.set_xlabel("Stock")
+    ax.set_ylabel("Benefit - Cost Score")
+    ax.set_title("MOORA Ranking - Benefit - Cost Scores")
+    plt.xticks(rotation=45)
+    st.pyplot(fig)
 
     # Download CSV
     csv = result.to_csv(index=False).encode('utf-8')

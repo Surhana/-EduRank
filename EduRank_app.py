@@ -88,15 +88,17 @@ if benefit_criteria or cost_criteria:
 
     result = pd.DataFrame({
         'Stock': stocks,
-        'Benefit - Cost': score
+        'Benefit - Cost': score.round(4)  # 4 decimal places
     })
-    result['Benefit - Cost'] = result['Benefit - Cost'].round(4)  # 4 decimal places
     st.dataframe(result)
 
-    # Step 4: Rank (as 1,2,3...)
+    # Step 4: Final Rankings
     st.subheader("Step 4: Final Rankings")
     result = result.sort_values('Benefit - Cost', ascending=False).reset_index(drop=True)
     result['Rank'] = range(1, len(result) + 1)  # 1,2,3...
+
+    # Ensure Benefit - Cost shows 4 decimal places in final table
+    result['Benefit - Cost'] = result['Benefit - Cost'].map('{:.4f}'.format)
 
     # Highlight the top-ranked alternative in green
     def highlight_top(row):

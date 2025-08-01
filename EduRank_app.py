@@ -1,4 +1,4 @@
-after select criteria types, make input weights for each selected criterion. and for steo 2 only show the weighted normalized table. import streamlit as st
+import streamlit as st
 import pandas as pd
 import numpy as np
 

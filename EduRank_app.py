@@ -90,12 +90,13 @@ if benefit_criteria or cost_criteria:
         'Stock': stocks,
         'Benefit - Cost': score
     })
+    result['Benefit - Cost'] = result['Benefit - Cost'].round(4)  # 4 decimal places
     st.dataframe(result)
 
-    # Step 4: Rank
+    # Step 4: Rank (as 1,2,3...)
     st.subheader("Step 4: Final Rankings")
-    result['Rank'] = result['Benefit - Cost'].rank(ascending=False)
-    result = result.sort_values('Rank').reset_index(drop=True)
+    result = result.sort_values('Benefit - Cost', ascending=False).reset_index(drop=True)
+    result['Rank'] = range(1, len(result) + 1)  # 1,2,3...
 
     # Highlight the top-ranked alternative in green
     def highlight_top(row):
@@ -105,7 +106,7 @@ if benefit_criteria or cost_criteria:
 
     # Announce the best alternative
     best_stock = result.loc[0, 'Stock']
-    st.success(f"🏆 **The Best Alternative is:** {best_stock}")
+    st.success(f"🏆 **The Best Alternative is:** {best_stock} 🎉💹")
 
     # Download CSV
     csv = result.to_csv(index=False).encode('utf-8')

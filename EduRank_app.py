@@ -62,6 +62,7 @@ if benefit_criteria or cost_criteria:
     normalized = numeric_df.copy()
     for col in criteria_cols:
         normalized[col] = numeric_df[col] / np.sqrt((numeric_df[col]**2).sum())
+    normalized.insert(0, 'Stock', df.iloc[:,0])  # Add Stock column
     st.dataframe(normalized)
 
     # -----------------------
@@ -85,7 +86,7 @@ if benefit_criteria or cost_criteria:
     weighted_normalized = normalized[selected_criteria].copy()
     for i, col in enumerate(selected_criteria):
         weighted_normalized[col] = weighted_normalized[col] * weights[i]
-
+    weighted_normalized.insert(0, 'Stock', df.iloc[:,0])  # Add Stock column
     st.dataframe(weighted_normalized)
 
     # -----------------------
@@ -101,17 +102,17 @@ if benefit_criteria or cost_criteria:
 
         score = benefit_data.sum(axis=1) - cost_data.sum(axis=1)
 
-        result = pd.DataFrame({
+        result_step3 = pd.DataFrame({
             'Stock': df.iloc[:,0],
-            'Benefit - Cost': score.round(4)  # 4 decimal places
+            'Benefit - Cost': score.round(4)
         })
-        st.dataframe(result)
+        st.dataframe(result_step3)
 
         # -----------------------
         # Step 4: Final Rankings
         # -----------------------
         st.subheader("Step 4: Final Rankings")
-        result = result.sort_values('Benefit - Cost', ascending=False).reset_index(drop=True)
+        result = result_step3.sort_values('Benefit - Cost', ascending=False).reset_index(drop=True)
         result['Rank'] = range(1, len(result) + 1)  # 1,2,3...
         result['Benefit - Cost'] = result['Benefit - Cost'].map('{:.4f}'.format)
 

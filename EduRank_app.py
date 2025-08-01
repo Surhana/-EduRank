@@ -95,8 +95,17 @@ if benefit_criteria or cost_criteria:
     # Step 4: Rank
     st.subheader("Step 4: Final Rankings")
     result['Rank'] = result['Benefit - Cost'].rank(ascending=False)
-    result = result.sort_values('Rank')
-    st.dataframe(result)
+    result = result.sort_values('Rank').reset_index(drop=True)
+
+    # Highlight the top-ranked alternative in green
+    def highlight_top(row):
+        return ['background-color: lightgreen'] * len(row) if row.name == 0 else [''] * len(row)
+
+    st.dataframe(result.style.apply(highlight_top, axis=1))
+
+    # Announce the best alternative
+    best_stock = result.loc[0, 'Stock']
+    st.success(f"🏆 **The Best Alternative is:** {best_stock} 🎉💹")
 
     # Download CSV
     csv = result.to_csv(index=False).encode('utf-8')
